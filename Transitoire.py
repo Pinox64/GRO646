@@ -18,8 +18,7 @@ setups = [
 ]
 
 # Constant
-Qsun = var.sigma * var.eps_s * (var.A_s / 2) * (var.r_s/(var.r_max if temp_choice == 0 else var.r_min))**2 * var.T_sun**4
-Qgaz = 0.98
+Qgaz = 0#0.98
 
 # Fonction de Ts
 Qrad = lambda Ts: var.eps_s * var.sigma * (var.A_s-var.A_vec) * (Ts**4 - var.T[temp_choice]**4)
@@ -53,7 +52,7 @@ def bilan_surface(Ts_guess, Tb_actuelle):
         Re=wind_choice*var.D/var.nu[temp_choice]
         u_inf=var.rho[temp_choice]*wind_choice*var.D/Re
 
-        Close_index = np.argmin((np.abs(x - Ts) for x in var.T))
+        Close_index = np.argmin([np.abs(x - Ts) for x in var.T])
         Re_s=wind_choice*var.D/var.nu[Close_index]
         u_s= var.rho[Close_index]*wind_choice*var.D/Re_s
 
@@ -75,7 +74,7 @@ def dTdt(t, Tb_actuelle):
 
     derivee = (Q_in - Q_out) / (var.m_Cp)
     
-    return derivee
+    return [derivee]
 
 Tb_initial = [300] 
 
@@ -96,6 +95,8 @@ def solve_transitoire(Tb_initial, t_span, t_eval):
 for config in setups:
     temp_choice = config["temp_choice"]
     wind_choice = config["wind_choice"]
+    # Temp changed so Qsun changed too
+    Qsun = var.sigma * var.eps_s * (var.A_s / 2) * (var.r_s/(var.r_max if temp_choice == 0 else var.r_min))**2 * var.T_sun**4
 
     plt.figure(figsize=(10, 6))
 
@@ -143,10 +144,12 @@ for config in setups:
     plt.plot(solution.t, solution.y[0], label="Tb : VEC - ON, Comm - ON", color='red', linewidth=2)
     plt.plot(solution.t, Ts_calcules, label="Ts : VEC - ON, Comm - ON", color='magenta', linewidth=2)
 
+    plt.axhline(y=350, color='red', linestyle='--', linewidth=1.5, label='Limite Max (350 K)')
+    plt.axhline(y=200, color='blue', linestyle='--', linewidth=1.5, label='Limite Min (200 K)')
     plt.title(config["label"], fontsize=14)
     plt.xlabel('Temps (secondes)', fontsize=12)
     plt.ylabel('Kelvin (K)', fontsize=12)
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.legend()
 
-    plt.show()
+plt.show()
