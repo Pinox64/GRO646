@@ -18,7 +18,7 @@ setups = [
 ]
 
 # Constant
-Qgaz = 0#0.98
+Qgaz = 0.98
 
 # Fonction de Ts
 Qrad = lambda Ts: var.eps_s * var.sigma * (var.A_s-var.A_vec) * (Ts**4 - var.T[temp_choice]**4)
@@ -60,7 +60,7 @@ def bilan_surface(Ts_guess, Tb_actuelle):
         h=Nuforce*var.k[temp_choice]/var.D
 
     # Bilan = 0
-    residu = chaleur_venant_du_corps + Qsun - Qrad(Ts) - (Qrad_vec(Ts) if VEC_choice else 0) - Qconv(Ts, h)
+    residu = chaleur_venant_du_corps + Qsun - Qrad(Ts) - (Qrad_vec(Ts) if VEC_choice else 0) - Qconv(Ts, h) - Qcondg(Ts)
     return residu
 
 def dTdt(t, Tb_actuelle):
