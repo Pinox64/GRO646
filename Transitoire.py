@@ -19,18 +19,20 @@ setups = [
 
 # Constant
 Qgaz = 0.98
+r_out = var.D/2
+r_in = var.Db/2
 
 # Fonction de Ts
 Qrad = lambda Ts: var.eps_s * var.sigma * (var.A_s-var.A_vec) * (Ts**4 - var.T[temp_choice]**4)
 Qrad_vec = lambda Ts: var.eps_vec * var.sigma * (var.A_vec) * (Ts**4 - var.T[temp_choice]**4)
 Qconv = lambda Ts, h_nat: h_nat*var.A_s * (Ts - var.T[temp_choice])
-Qcondg = lambda Ts: var.k_in*var.A_cont*(Ts - var.T[temp_choice])/var.x_ins
 
 # Fonction de Tb
 Qcondsw = lambda Tb: var.k_sw*var.A_sw*(Tb - var.T[temp_choice])/var.x_sw
+Qcondg = lambda Tb: var.k_in*var.A_cont*(Tb - var.T[temp_choice])/var.x_ins
 
 # Fonction de Ts et Tb
-Qconds = lambda Ts, Tb: (var.A_s*var.k_in/var.x_ins)*(Tb - Ts)
+Qconds = lambda Ts, Tb: (4 * np.pi * var.k_in * r_in * r_out / (r_out - r_in))*(Tb - Ts)
 
 def bilan_surface(Ts_guess, Tb_actuelle):
     Ts = Ts_guess[0] # fsolve passe une liste
@@ -60,7 +62,7 @@ def bilan_surface(Ts_guess, Tb_actuelle):
         h=Nuforce*var.k[temp_choice]/var.D
 
     # Bilan = 0
-    residu = chaleur_venant_du_corps + Qsun - Qrad(Ts) - (Qrad_vec(Ts) if VEC_choice else 0) - Qconv(Ts, h) - Qcondg(Ts)
+    residu = chaleur_venant_du_corps + Qsun - Qrad(Ts) - (Qrad_vec(Ts) if VEC_choice else 0) - Qconv(Ts, h)
     return residu
 
 def dTdt(t, Tb_actuelle):
@@ -70,7 +72,7 @@ def dTdt(t, Tb_actuelle):
 
     Q_in = Qgaz 
 
-    Q_out = Qconds(Ts_act, Tb_val) + (Qcondsw(Tb_val) if Comm_choice else 0)
+    Q_out = Qconds(Ts_act, Tb_val) + (Qcondsw(Tb_val) if Comm_choice else 0) + Qcondg(Tb_val)
 
     derivee = (Q_in - Q_out) / (var.m_Cp)
     
