@@ -1,5 +1,6 @@
 import Variables as var
 import numpy as np
+import math
 import Ts_finder
 import matplotlib.pyplot as plt
 from scipy.optimize import fsolve
@@ -9,7 +10,7 @@ from scipy.integrate import solve_ivp
 ##############
 # Paramètres #
 ##############
-cas = 1
+cas = 3
 if cas == 1:
     temp_choice = 0 #50K
     wind = 0
@@ -27,8 +28,8 @@ elif cas == 4:
     wind = var.vent 
 
 
-vec_actif = False
-switch_actif = False
+vec_actif = True
+switch_actif = True
 
 T_inf = var.T[temp_choice]
 
@@ -38,6 +39,9 @@ Lc = var.D
 
 #first guess
 Ts_first = var.TbPerm
+
+r_out = var.D/2
+r_in = var.Db/2
 
 def Q (Ts, var):
 
@@ -52,7 +56,7 @@ def Q (Ts, var):
         h = (Nu_sphere_Nat * var.k[temp_choice])/Lc
 
     elif cas == 2 or cas == 4:
-        #put the wind equation here
+
         Re=wind*var.D/var.nu[temp_choice]
         u_inf=var.rho[temp_choice]*wind*var.D/Re
 
@@ -79,11 +83,12 @@ def Q (Ts, var):
     Qrad_vec = (var.eps_vec if vec_actif else var.eps_s) * var.sigma * (var.A_vec) * (Ts**4 - T_inf**4)
 
     Qconv = h*var.A_s * (Ts-T_inf)
+   
+    Qconds = (4 * math.pi * var.k_in * r_in * r_out / (r_out - r_in)) * (var.TbPerm - Ts)
 
-    Qconds = (var.A_s*var.k_in/var.x_ins)*(var.TbPerm-Ts)
-
-    Qcondg=var.k_in*var.A_cont*(Ts-T_inf)/var.x_ins
-
+    # pas utilisé
+    Qcondg=var.k_in*var.A_cont*(var.TbPerm -T_inf)/var.x_sw
+    # pas utilisé
     Qcondsw= (var.k_sw*var.A_sw*(var.TbPerm-T_inf)/var.x_sw) if switch_actif else 0
 
     return Qsun, Qrad, Qrad_vec, Qconv, Qconds, Qcondg, Qcondsw, Qgaz
@@ -102,21 +107,21 @@ def Q_t(Ts, var):
         Qgaz
     ) = Q(Ts, var)
 
-    Q_t = Qsun - Qrad - Qrad_vec - Qconv + Qconds - Qcondg - Qcondsw #+ Qgaz
+    Q_t = Qsun - Qrad - Qrad_vec - Qconv + Qconds
     return Q_t
 
 Ts = Ts_finder.newton_raphson(Ts_first, lambda Ts: Q_t(Ts, var))
 
 (
-        Qsun,
-        Qrad,
-        Qrad_vec,
-        Qconv,
-        Qconds,
-        Qcondg,
-        Qcondsw,
-        Qgaz
-    ) = Q(Ts, var)
+    Qsun,
+    Qrad,
+    Qrad_vec,
+    Qconv,
+    Qconds,
+    Qcondg,
+    Qcondsw,
+    Qgaz
+) = Q(Ts, var)
 
 print(f"Ts: {Ts}")
 print(f"Qsun: {Qsun}")
@@ -128,3 +133,9 @@ print(f"Qcondg: {Qcondg}")
 print(f"Qcondsw: {Qcondsw}")
 print(f"Qgaz: {Qgaz}")
 print(f"Qt: {Q_t(Ts, var)}")
+
+#Ein
+print(f"Ein: {Qsun + Qconds}")
+
+#Eout = Q_loss
+print(f"Eout: {Qrad + Qconv + Qrad_vec}")
